@@ -1,0 +1,46 @@
+<?php
+session_start();
+include "db.php";
+include "log.php";
+
+$msg = "";
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    $u = trim($_POST['user'] ?? '');
+    $p = $_POST['pass'] ?? '';
+
+    if ($u === "" || $p === "") {
+        $msg = "用户名和密码不能为空";
+    } else {
+        $sql = "SELECT id, username, password, role, avatar 
+                FROM users 
+                WHERE username = '" . $u . "'";
+
+        $res = $db->query($sql);
+
+        if ($res && $row = $res->fetch_assoc()) {
+            if (password_verify($p, $row['password'])) {
+                $_SESSION['user'] = $row;
+                write_log($row['username'], $row['role'], "登录", "用户登录成功");
+                header("Location: index.php");
+                exit;
+            } else {
+                $msg = "用户名或密码错误";
+            }
+        } else {
+            $msg = "用户名或密码错误";
+        }
+    }
+}
+
+?>
+<!doctype html>
+<html><head><meta charset="utf-8"><title>登录</title></head><body>
+<h2>登录</h2>
+<?php if($msg) echo '<p style="color:red">'.htmlspecialchars($msg).'</p>'; ?>
+<form method="post">
+    用户名: <input type="text" name="user" required><br>
+    密码: <input type="password" name="pass" required><br>
+    <button type="submit">登录</button>
+</form>
+<p><a href="index.php">返回主页</a></p>
+</body></html>
